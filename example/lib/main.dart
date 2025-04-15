@@ -127,8 +127,8 @@ class _MapScreenState extends State<MapScreen> with TickerProviderStateMixin {
           return FlutterMap(
             mapController: mapController,
             options: MapOptions(
-              center: LatLng(51.509364, -0.128928),
-              zoom: 9.2,
+              initialCenter: LatLng(51.509364, -0.128928),
+              initialZoom: 9.2,
             ),
             children: [
               TileLayer(
