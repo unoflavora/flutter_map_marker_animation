@@ -54,11 +54,8 @@ class _AnimatedMarkerLayerState
   Widget build(BuildContext context) {
     super.build(context);
     final map = MapCamera.of(context);
-    final markerLatLng = LatLng(latitude, longitude);
-    
-    // Get the pixel position using the correct method in Flutter Map 8.1.1
-    final pxPoint = map.latLngToScreenOffset(markerLatLng);
-    
+
+    final pxPoint = map.projectAtZoom(LatLng(latitude, longitude), map.zoom);
     final width = marker.width;
     final height = marker.height;
     final left = 0.5 * marker.width * (((marker.alignment)?.x ?? 0) + 1);
@@ -66,31 +63,21 @@ class _AnimatedMarkerLayerState
     final right = width - left;
     final bottom = height - top;
 
-    final sw = Point(pxPoint.dx + width, pxPoint.dy - height);
-    final ne = Point(pxPoint.dx - width, pxPoint.dy + height);
-
-    final visibleRect = Rect.fromLTRB(
-      0,
-      0,
-      map.size.width,
-      map.size.height,
-    );
-    final markerRect = Rect.fromLTRB(
-      sw.x,
-      ne.y,
-      ne.x,
-      sw.y,
-    );
-
-    if (!visibleRect.overlaps(markerRect)) {
+    // Check if the marker is within the visible bounds
+    final sw = Offset(pxPoint.dx + width, pxPoint.dy - height);
+    final ne = Offset(pxPoint.dx - width, pxPoint.dy + height);
+    if (!map.pixelBounds.contains(sw) && !map.pixelBounds.contains(ne)) {
       return const SizedBox();
     }
 
-    final pos = Point(pxPoint.dx, pxPoint.dy);
+    // Calculate position relative to pixel origin
+    final pos = Point<double>(
+        pxPoint.dx - map.pixelOrigin.dx, pxPoint.dy - map.pixelOrigin.dy);
+
     final markerWidget = (marker.rotate ?? widget.options.rotate ?? false)
         // Counter rotated marker to the map rotation
         ? Transform.rotate(
-            angle: -map.rotation * (pi / 180.0),
+            angle: -map.rotationRad,
             origin: widget.options.rotateOrigin,
             alignment: widget.options.rotateAlignment,
             child: marker.child,
